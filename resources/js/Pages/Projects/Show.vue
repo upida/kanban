@@ -198,6 +198,7 @@ function addTask(status) {
                             v-for="status in statuses"
                             :key="status.id"
                             class="flex-shrink-0 flex flex-col gap-4 bg-gray-100 p-4 rounded shadow-lg w-1/4"
+                            style="width: 300px;"
                         >
                             <div class="flex justify-between">
                                 <h3 class="font-semibold">{{ status.name }}</h3>

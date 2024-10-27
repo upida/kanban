@@ -45,6 +45,12 @@ const showingNavigationDropdown = ref(false);
                                 >
                                     Project
                                 </NavLink>
+                                <NavLink
+                                    :href="route('analytics.index')"
+                                    :active="route().current('analytics.index')"
+                                >
+                                    Analytics
+                                </NavLink>
                             </div>
                         </div>
 

@@ -49,7 +49,7 @@ class ProjectController extends Controller
             return abort(404, 'Project not found');
         }
 
-        $statuses = $project->status()->with('tasks')->get();
+        $statuses = $project->statuses()->with('tasks')->get();
         $notifications = $project->notifications()->get();
 
         return Inertia::render('Projects/Show', [

@@ -1,14 +1,30 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { ref, computed } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import NavLink from '@/Components/NavLink.vue';
 import TableActions from '@/Components/TableActions.vue';
 
-defineProps({
+const props = defineProps({
     projects: {
         type: Array,
         required: true,
     },
+});
+
+const filterText = ref('');
+
+const filteredProjects = computed(() => {
+    if (!filterText.value) {
+        return props.projects; // return all projects if no filter
+    }
+    return props.projects.filter(project => {
+        return (
+            project.name.toLowerCase().includes(filterText.value.toLowerCase()) ||
+            project.description.toLowerCase().includes(filterText.value.toLowerCase()) ||
+            project.deadline.toLowerCase().includes(filterText.value.toLowerCase())
+        );
+    });
 });
 
 const columns = {
@@ -54,12 +70,10 @@ function show(row) {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex h-5 justify-between">
-                <h2
-                    class="flex items-center gap-4 text-xl font-semibold leading-tight text-gray-800"
-                >
+                <h2 class="flex items-center gap-4 text-xl font-semibold leading-tight text-gray-800">
                     Projects
                 </h2>
-    
+
                 <div class="flex items-center gap-4">
                     <NavLink
                         :href="route('projects.create')"
@@ -73,7 +87,24 @@ function show(row) {
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-                <TableActions :isShow="true" :columns="columns" :data="projects" @editData="editData" @deleteData="deleteData" @show="show" />
+                <!-- Filter Input -->
+                <div>
+                    <input
+                        v-model="filterText"
+                        type="text"
+                        placeholder="Filter projects..."
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    />
+                </div>
+                
+                <TableActions
+                    :isShow="true"
+                    :columns="columns"
+                    :data="filteredProjects"
+                    @editData="editData"
+                    @deleteData="deleteData"
+                    @show="show"
+                />
             </div>
         </div>
     </AuthenticatedLayout>

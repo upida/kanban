@@ -22,9 +22,14 @@ class Project extends Model
         'updated_at' => 'datetime:Y-m-d H:i:s',
     ];
 
-    public function status(): HasMany
+    public function statuses(): HasMany
     {
         return $this->hasMany(Status::class);
+    }
+
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
     }
 
     public function notifications(): HasMany

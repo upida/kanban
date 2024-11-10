@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StatusStoreRequest;
 use App\Http\Requests\StatusUpdateRequest;
+use App\Models\Project;
 use App\Models\Status;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -29,7 +30,7 @@ class StatusController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StatusStoreRequest $request)
+    public function store(StatusStoreRequest $request, Project $project)
     {
         $status = Status::create($request->validated());
 
@@ -55,7 +56,7 @@ class StatusController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(StatusUpdateRequest $request, Status $status)
+    public function update(StatusUpdateRequest $request, Project $project, Status $status)
     {
         if (!$status instanceof Status) {
             return abort(404, 'Status not found');
@@ -69,7 +70,7 @@ class StatusController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Status $status)
+    public function destroy(Project $project, Status $status)
     {
         if (!$status instanceof Status) {
             return abort(404, 'Status not found');

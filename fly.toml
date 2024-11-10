@@ -1,0 +1,44 @@
+# fly.toml app configuration file generated for upida-kanban on 2024-11-10T21:31:51+07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'upida-kanban'
+primary_region = 'sin'
+console_command = 'php /var/www/html/artisan tinker'
+
+[build]
+  [build.args]
+    NODE_VERSION = '18'
+    PHP_VERSION = '8.2'
+
+[env]
+  APP_ENV = 'production'
+  APP_NAME = 'Kanban'
+  APP_TIMEZONE = 'Asia/Jakarta'
+  APP_URL = 'https://upida-kanban.fly.dev'
+  LOG_CHANNEL = 'stderr'
+  LOG_LEVEL = 'info'
+  LOG_STDERR_FORMATTER = 'Monolog\Formatter\JsonFormatter'
+  SESSION_DRIVER = 'cookie'
+  SESSION_SECURE_COOKIE = 'true'
+  DB_CONNECTION = 'mysql'
+  DB_HOST = 'mysql-lively-glade-933.internal'
+  DB_DATABASE = 'kanban'
+  MAIL_MAILER = 'smtp'
+  MAIL_HOST = 'smtp.gmail.com'
+  MAIL_PORT = '587'
+  MAIL_ENCRYPTION = 'tls'
+  MAIL_FROM_NAME = 'Kanban'
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

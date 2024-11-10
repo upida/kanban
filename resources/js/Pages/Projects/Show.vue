@@ -165,7 +165,7 @@ function addTask(status) {
 </script>
 
 <template>
-    <Head title="Status" />
+    <Head :title="project.name" />
 
     <AuthenticatedLayout>
         <template #header>
@@ -258,47 +258,66 @@ function addTask(status) {
         </div>
 
         <!-- Modal untuk mengedit task -->
-        <div v-if="isEditTaskModalVisible" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div class="bg-white p-6 rounded shadow-lg w-1/3">
-                <h3 class="text-lg font-semibold">Edit Task</h3>
-                <input 
-                    v-model="currentTask.title" 
-                    type="text" 
-                    class="border rounded p-2 w-full mt-2" 
-                    placeholder="Task Title"
-                />
-                <textarea 
-                    v-model="currentTask.description" 
-                    class="border rounded p-2 w-full mt-2" 
-                    placeholder="Description"
-                ></textarea>
-                <input 
-                    v-model="currentTask.deadline" 
-                    type="datetime-local" 
-                    class="border rounded p-2 w-full mt-2"
-                />
-                <input 
-                    v-model="currentTask.done" 
-                    type="checkbox" 
-                    class="border rounded p-2 w-full mt-2"
-                />
-                <select 
-                    v-model="currentTask.status_id" 
-                    class="border rounded p-2 w-full mt-2"
-                >
-                    <option v-for="status in props.statuses" :key="status.id" :value="status.id">
-                        {{ status.name }}
-                    </option>
-                </select>
-                <div class="flex justify-end mt-4">
-                    <button @click="hideEditTaskModal" class="mr-2 p-2 bg-gray-500 text-white rounded">Cancel</button>
-                    <button @click="updateTask" class="p-2 bg-blue-500 text-white rounded">Save</button>
-                </div>
-            </div>
+        <div v-if="isEditTaskModalVisible" class="fixed inset-0 flex items-center justify-center background-black bg-opacity-50">
+            <v-card class="bg-white p-6 rounded shadow-lg w-1/3">
+                <v-toolbar class="bg-white">
+                    <v-toolbar-title>Edit Task</v-toolbar-title>
+                    <v-toolbar-items>
+                        <v-switch
+                            v-model="currentTask.done"
+                            :color="currentTask.done ? 'indigo' : 'gray'"
+                            class="mr-4"
+                        />
+                    </v-toolbar-items>
+                </v-toolbar>
+                <v-card-text>
+                    <v-text-field
+                        v-model="currentTask.title"
+                        label="Task Title"
+                        required
+                    />
+                    <v-textarea
+                        v-model="currentTask.description"
+                        label="Description"
+                        required
+                    />
+                    <div>
+                        <label class="mr-3">Deadline</label>
+                        <input
+                            v-model="currentTask.deadline"
+                            type="datetime-local"
+                            label="deadline"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label class="mr-3">Status</label>
+                        <select
+                            v-model="currentTask.status_id"
+                            class="border rounded p-2 w-full mt-2"
+                        >
+                            <option v-for="status in props.statuses" :key="status.id" :value="status.id">
+                                {{ status.name }}
+                            </option>
+                        </select>
+                    </div>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn
+                        text="Close"
+                        @click="hideEditTaskModal"
+                    />
+                    <v-btn
+                        text="Save"
+                        @click="updateTask"
+                    />
+                </v-card-actions>
+            </v-card>
         </div>
 
         <!-- Modal untuk mengedit status -->
-        <div v-if="isEditStatusModalVisible" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <div v-if="isEditStatusModalVisible" class="fixed inset-0 flex items-center justify-center background-black bg-opacity-50">
             <div class="bg-white p-6 rounded shadow-lg w-1/3">
                 <h3 class="text-lg font-semibold">Edit Status</h3>
                 <input 
@@ -315,3 +334,11 @@ function addTask(status) {
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style scoped>
+
+.background-black {
+    background-color: rgb(0 0 0 / var(--tw-bg-opacity));
+}
+
+</style>

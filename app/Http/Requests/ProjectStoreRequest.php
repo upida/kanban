@@ -23,8 +23,9 @@ class ProjectStoreRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255', 'unique:projects,name'],
-            'description' => ['required', 'string', 'max:255'],
-            'deadline' => ['required', 'date', 'date_format:Y-m-d'],
+            'description' => ['string', 'max:255'],
+            'started_at' => ['required', 'date', 'date_format:Y-m-d H:i:s'],
+            'ended_at' => ['required', 'date', 'date_format:Y-m-d H:i:s'],
         ];
     }
 }

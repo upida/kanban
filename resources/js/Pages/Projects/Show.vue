@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TableCreate from '@/Components/TableCreate.vue';
+import NavLink from '@/Components/NavLink.vue';
 import { PencilIcon, TrashIcon } from '@heroicons/vue/24/outline';
 
 const props = defineProps({
@@ -30,7 +31,6 @@ const currentStatus = ref(null);
 const columns_status = {
     id: [],
     name: ['editable', 'string'],
-    notification: ['editable', 'boolean'],
     created_at: [],
     updated_at: [],
 };
@@ -43,7 +43,6 @@ const showEditTaskModal = (task) => {
 const showEditStatusModal = (status) => {
     currentStatus.value = { 
         ...status,
-        notification: !!status.notification
     };
     isEditStatusModalVisible.value = true;
 };
@@ -75,9 +74,8 @@ const updateTask = () => {
 
 const updateStatus = () => {
     if (currentStatus.value) {
-        router.patch(`/statuses/${currentStatus.value.id}`, {
+        router.patch(`/projects/${props.project.id}/statuses/${currentStatus.value.id}`, {
             name: currentStatus.value.name,
-            notification: currentStatus.value.notification, // Menyertakan status notifikasi
         }, {
             preserveScroll: true,
             onSuccess: () => {
@@ -108,7 +106,7 @@ function deleteTask(task) {
 }
 
 function deleteStatus(status) {
-    router.delete(`/statuses/${status.id}`, {
+    router.delete(`/projects/${props.project.id}/statuses/${status.id}`, {
         preserveScroll: true,
         onSuccess: () => {
             router.get('/projects/' + props.project.id, {}, {
@@ -123,7 +121,7 @@ function deleteStatus(status) {
 
 function addStatus(data, nextAction, errorAction) {
     data.project_id = props.project.id;
-    router.post('/statuses', data, {
+    router.post('/projects/' + props.project.id + '/statuses', data, {
         preserveScroll: true,
         onSuccess: () => {
             nextAction();
@@ -143,7 +141,8 @@ function addTask(status) {
                 {
                     title: newTaskName.value,
                     description: 'Test Description',
-                    deadline: '2024-10-26',
+                    deadline: '2024-10-26 10:00:00',
+                    done: false,
                     status_id: status.id,
                 },
                 {
@@ -176,10 +175,25 @@ function addTask(status) {
                 </h2>
                 <div class="flex items-center gap-4">
                     <NavLink
-                        :href="route('projects.create')"
+                        :href="route('projects.notifications', { project: project.id })"
                         class="inline-flex items-center rounded-md border border-transparent bg-white px-4 py-2 text-sm font-medium text-indigo-600 shadow-sm hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     >
-                        Create Project
+                        <v-icon icon="mdi-bell" class="mr-2" />
+                        {{ project.notifications_count ?? 0 }} unread
+                    </NavLink>
+                    <NavLink
+                        :href="route('projects.analytics', { project: project.id })"
+                        class="inline-flex items-center rounded-md border border-transparent bg-white px-4 py-2 text-sm font-medium text-indigo-600 shadow-sm hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    >
+                        <v-icon icon="mdi-chart-bar" class="mr-2" />
+                        Analytics
+                    </NavLink>
+                    <NavLink
+                        :href="route('projects.members', { project: project.id })"
+                        class="inline-flex items-center rounded-md border border-transparent bg-white px-4 py-2 text-sm font-medium text-indigo-600 shadow-sm hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                    >
+                        <v-icon icon="mdi-account-multiple" class="mr-2" />
+                        {{ project.members_count ?? 0 }} members
                     </NavLink>
                 </div>
             </div>
@@ -260,7 +274,12 @@ function addTask(status) {
                 ></textarea>
                 <input 
                     v-model="currentTask.deadline" 
-                    type="date" 
+                    type="datetime-local" 
+                    class="border rounded p-2 w-full mt-2"
+                />
+                <input 
+                    v-model="currentTask.done" 
+                    type="checkbox" 
                     class="border rounded p-2 w-full mt-2"
                 />
                 <select 
@@ -288,14 +307,6 @@ function addTask(status) {
                     class="border rounded p-2 w-full mt-2" 
                     placeholder="Status Name"
                 />
-                <div class="flex items-center mt-2">
-                    <input 
-                        type="checkbox" 
-                        v-model="currentStatus.notification" 
-                        class="mr-2"
-                    />
-                    <label>Enable Notification</label>
-                </div>
                 <div class="flex justify-end mt-4">
                     <button @click="hideEditStatusModal" class="mr-2 p-2 bg-gray-500 text-white rounded">Cancel</button>
                     <button @click="updateStatus" class="p-2 bg-blue-500 text-white rounded">Save</button>

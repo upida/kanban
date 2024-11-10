@@ -2,6 +2,7 @@
 import TableCreate from '@/Components/TableCreate.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, router } from '@inertiajs/vue3';
+import moment from 'moment';
 
 defineProps({
 });
@@ -10,12 +11,17 @@ const columns = {
     id: [],
     name: ['editable', 'string'],
     description: ['editable', 'string'],
-    deadline: ['editable', 'date'],
+    started_at: ['editable', 'date'],
+    ended_at: ['editable', 'date'],
     created_at: [],
     updated_at: [],
 }
 
 function addData(data, nextAction, errorAction) {
+    if (!data.description) delete data.description;
+    data.started_at = moment(data.started_at).format('YYYY-MM-DD HH:mm:ss');
+    data.ended_at = moment(data.ended_at).format('YYYY-MM-DD HH:mm:ss');
+
     router.post('/projects', data, {
         preserveScroll: true,
         onSuccess: () => {

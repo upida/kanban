@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('project_id')->constrained('projects')->onDelete('cascade');
             $table->string('name');
-            $table->boolean('notification')->default(false);
             $table->timestamps();
         });
     }

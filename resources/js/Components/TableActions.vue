@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue';
 import TextInput from './TextInput.vue';
 import { Switch } from '@headlessui/vue';
 import { ArrowPathIcon } from '@heroicons/vue/24/outline';
-import DatePicker from './DatePicker.vue';
+import moment from 'moment';
 
 const props = defineProps({
     columns: {
@@ -23,8 +23,6 @@ const props = defineProps({
 const loading = ref({});
 const errors = ref({});
 const emit = defineEmits(['editData', 'deleteData', 'show']);
-
-const editableColumns = ref(Object.entries(props.columns).filter(([key, value]) => value.includes('editable')).map(([key, value]) => [key, value]));
 
 function editData(key, row) {
     if (row.edit) {
@@ -146,10 +144,12 @@ defineExpose({ focus: () => input.value.focus() });
                             >
                                 {{ row[column] }}
                             </span>
-                            <DatePicker
+                            <input
                                 v-else
-                                :date="row[column]"
-                                @setEmit="row[column] = $event.date"
+                                v-model="row[column]"
+                                type="datetime-local"
+                                class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Select date"
                             />
                         </template>
                         <small v-if="errors[row.id]?.[column]" class="text-red-600" style="display:inline-block;">{{ errors[row.id][column] }}</small>

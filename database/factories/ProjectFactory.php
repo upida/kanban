@@ -19,7 +19,8 @@ class ProjectFactory extends Factory
         return [
             'name' => $this->faker->name(),
             'description' => $this->faker->sentence(),
-            'deadline' => $this->faker->dateTimeBetween('-1 year', 'now')->format('Y-m-d'),
+            'started_at' => $this->faker->dateTimeBetween('-1 year', 'now')->format('Y-m-d H:i:s'),
+            'ended_at' => $this->faker->dateTimeBetween('-1 year', 'now')->format('Y-m-d H:i:s'),
         ];
     }
 }

@@ -38,7 +38,8 @@ class TaskTest extends TestCase
         $response = $this->post("/projects/{$this->project->id}/tasks", [
             'title' => 'Test Task',
             'description' => 'Test Description',
-            'deadline' => '2024-10-26',
+            'deadline' => '2024-10-26 10:00:00',
+            'done' => false,
             'status_id' => $this->status->id,
         ]);
 
@@ -50,7 +51,8 @@ class TaskTest extends TestCase
         $response = $this->patch("/projects/{$this->project->id}/tasks/{$this->task->id}", [
             'title' => 'Test Task Edit',
             'description' => 'Test Description Edit',
-            'deadline' => '2024-10-26',
+            'deadline' => '2024-10-26 10:00:00',
+            'done' => false,
         ]);
 
         $response->assertSessionHasNoErrors()->assertRedirect("/projects/{$this->project->id}");

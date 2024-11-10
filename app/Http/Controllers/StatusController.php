@@ -15,10 +15,7 @@ class StatusController extends Controller
      */
     public function index()
     {
-        $statuses = Status::with('project')->get();
-        return Inertia::render('Statuses/Index', [
-            'statuses' => $statuses,
-        ]);
+        //
     }
 
     /**

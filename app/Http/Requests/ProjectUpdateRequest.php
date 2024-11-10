@@ -23,8 +23,9 @@ class ProjectUpdateRequest extends FormRequest
     {
         return [
             'name' => ['string', 'max:255', 'unique:projects,name,' . $this->project->id],
-            'description' => ['string', 'max:255'],
-            'deadline' => ['date', 'date_format:Y-m-d'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'started_at' => ['date', 'date_format:Y-m-d H:i:s'],
+            'ended_at' => ['date', 'date_format:Y-m-d H:i:s'],
         ];
     }
 }

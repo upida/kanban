@@ -38,7 +38,8 @@ class ProjectTest extends TestCase
         $response = $this->post('/projects', [
             'name' => 'Test Project',
             'description' => 'Test Description',
-            'deadline' => '2024-10-26',
+            'started_at' => '2024-10-26 10:00:00',
+            'ended_at' => '2024-10-26 10:00:00',
         ]);
 
         $response->assertSessionHasNoErrors()->assertRedirect('/projects');
@@ -69,7 +70,8 @@ class ProjectTest extends TestCase
         ->create([
             'title' => 'Test Task',
             'description' => 'Test Description',
-            'deadline' => '2024-10-26',
+            'deadline' => '2024-10-26 10:00:00',
+            'done' => false,
         ]);
 
         // create a notification for the project
@@ -87,21 +89,22 @@ class ProjectTest extends TestCase
                 ->where('id', $this->project->id)
                 ->where('name', $this->project->name)
                 ->where('description', $this->project->description)
-                ->where('deadline', Carbon::parse($this->project->deadline)->format('Y-m-d'))
+                ->where('started_at', Carbon::parse($this->project->started_at)->format('Y-m-d H:i:s'))
+                ->where('ended_at', Carbon::parse($this->project->ended_at)->format('Y-m-d H:i:s'))
                 ->where('created_at', Carbon::parse($this->project->created_at)->format('Y-m-d H:i:s'))
                 ->where('updated_at', Carbon::parse($this->project->updated_at)->format('Y-m-d H:i:s'))
             )
             ->has('statuses', fn (AssertableInertia $statuses) => 
                 $statuses->where('0.id', $this->status->id)
                 ->where('0.name', $this->status->name)
-                ->where('0.notification', $this->status->notification ? 1 : 0)
                 ->where('0.created_at', Carbon::parse($this->status->created_at)->format('Y-m-d H:i:s'))
                 ->where('0.updated_at', Carbon::parse($this->status->updated_at)->format('Y-m-d H:i:s'))
                 ->has('0.tasks', fn (AssertableInertia $tasks) => 
                     $tasks->where('0.id', $task->id)
                     ->where('0.title', $task->title)
                     ->where('0.description', $task->description)
-                    ->where('0.deadline', Carbon::parse($task->deadline)->format('Y-m-d'))
+                    ->where('0.deadline', Carbon::parse($task->deadline)->format('Y-m-d H:i:s'))
+                    ->where('0.done', $task->done ? 1 : 0)
                     ->where('0.created_at', Carbon::parse($task->created_at)->format('Y-m-d H:i:s'))
                     ->where('0.updated_at', Carbon::parse($task->updated_at)->format('Y-m-d H:i:s'))
                 )
@@ -123,7 +126,8 @@ class ProjectTest extends TestCase
             'status_id' => Status::factory()->for($this->project)->create()->id,
             'title' => 'Test Task',
             'description' => 'Test Description',
-            'deadline' => '2024-10-26',
+            'deadline' => '2024-10-26 10:00:00',
+            'done' => false,
         ]);
 
         $notification = Notification::factory()->for($this->user)->for($this->project)
@@ -139,7 +143,8 @@ class ProjectTest extends TestCase
                 $projects->where('0.id', $this->project->id)
                 ->where('0.name', $this->project->name)
                 ->where('0.description', $this->project->description)
-                ->where('0.deadline', Carbon::parse($this->project->deadline)->format('Y-m-d'))
+                ->where('0.started_at', Carbon::parse($this->project->started_at)->format('Y-m-d H:i:s'))
+                ->where('0.ended_at', Carbon::parse($this->project->ended_at)->format('Y-m-d H:i:s'))
                 ->where('0.created_at', Carbon::parse($this->project->created_at)->format('Y-m-d H:i:s'))
                 ->where('0.updated_at', Carbon::parse($this->project->updated_at)->format('Y-m-d H:i:s'))
                 ->has('0.notifications', fn (AssertableInertia $notifications) =>

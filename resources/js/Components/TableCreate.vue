@@ -3,7 +3,7 @@ import { onMounted, ref, defineProps, defineEmits, watch } from 'vue';
 import TextInput from './TextInput.vue';
 import { Switch } from '@headlessui/vue';
 import { ArrowPathIcon } from '@heroicons/vue/24/outline';
-import { Datepicker } from 'flowbite-datepicker';
+import moment from 'moment';
 
 const props = defineProps({
     columns: {
@@ -50,25 +50,6 @@ function addData(newval) {
         }
     );
 }
-
-// Inisialisasi datepicker di dalam onMounted
-onMounted(() => {
-    editableColumns.value.forEach(([key, value]) => {
-        if (value.includes('date')) {
-            const datepickerEl = document.getElementById(`date-picker-${key}`);
-            if (datepickerEl) {
-                new Datepicker(datepickerEl, {
-                    format: 'yyyy-mm-dd',
-                    autohide: true,
-                    clearBtn: true,
-                });
-                datepickerEl.addEventListener('changeDate', (e) => {
-                    data.value[key] = e.target.value;
-                });
-            }
-        }
-    });
-});
 
 </script>
 
@@ -117,8 +98,7 @@ onMounted(() => {
                         <input
                             v-else-if="column[1].includes('date')"
                             v-model="data[column[0]]"
-                            type="text"
-                            :id="`date-picker-${column[0]}`"
+                            type="datetime-local"
                             class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500"
                             placeholder="Select date"
                         />

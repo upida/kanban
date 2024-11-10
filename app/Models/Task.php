@@ -17,10 +17,12 @@ class Task extends Model
         'title',
         'description',
         'deadline',
+        'done',
     ];
 
     protected $casts = [
-        'deadline' => 'date:Y-m-d',
+        'done' => 'boolean',
+        'deadline' => 'datetime:Y-m-d H:i:s',
         'created_at' => 'datetime:Y-m-d H:i:s',
         'updated_at' => 'datetime:Y-m-d H:i:s',
     ];

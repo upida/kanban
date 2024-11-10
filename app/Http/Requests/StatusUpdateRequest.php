@@ -24,7 +24,6 @@ class StatusUpdateRequest extends FormRequest
         return [
             'project_id' => ['exists:projects,id,' . $this->status->project_id],
             'name' => ['string', 'max:255', 'unique:statuses,name,' . $this->status->id],
-            'notification' => ['boolean'],
         ];
     }
 }

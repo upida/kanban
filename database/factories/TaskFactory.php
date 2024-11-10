@@ -19,7 +19,8 @@ class TaskFactory extends Factory
         return [
             'title' => $this->faker->name(),
             'description' => $this->faker->sentence(),
-            'deadline' => $this->faker->dateTimeBetween('-1 year', 'now')->format('Y-m-d'),
+            'deadline' => $this->faker->dateTimeBetween('-1 year', 'now')->format('Y-m-d H:i:s'),
+            'done' => false,
         ];
     }
 }

@@ -24,7 +24,6 @@ class StatusStoreRequest extends FormRequest
         return [
             'project_id' => ['required', 'exists:projects,id'],
             'name' => ['required', 'string', 'max:255', 'unique:statuses,name'],
-            'notification' => ['boolean'],
         ];
     }
 }

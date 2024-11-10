@@ -17,7 +17,8 @@ return new class extends Migration
             $table->foreignId('status_id')->constrained('statuses')->onDelete('cascade');
             $table->string('title');
             $table->string('description')->nullable();
-            $table->date('deadline')->nullable();
+            $table->boolean('done')->default(false);
+            $table->timestamp('deadline')->nullable();
             $table->timestamps();
         });
     }

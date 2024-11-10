@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProjectStoreRequest;
 use App\Http\Requests\ProjectUpdateRequest;
+use App\Models\Member;
 use App\Models\Project;
 use App\Models\Status;
 use Illuminate\Http\Request;
@@ -16,7 +17,29 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        $projects = Project::with('notifications')->get();
+        $memberships = Member::joined()->with([
+            'project' => function ($subquery) {
+                return $subquery->withCount('notifications')->withCount('members');
+            }
+        ])->get();
+
+        foreach ($memberships as $membership) {
+            $membership->owner = $membership->project->owner()->toArray();
+        }
+
+        $memberships = $memberships->toArray();
+
+        $projects = [];
+
+        foreach ($memberships as $membership) {
+            $projects[] = array_merge(
+                $membership['project'],
+                [
+                    'owner' => $membership['owner'],
+                ]
+            );
+        }
+
         return Inertia::render('Projects/Index', [
             'projects' => $projects,
         ]);
@@ -35,9 +58,9 @@ class ProjectController extends Controller
      */
     public function store(ProjectStoreRequest $request)
     {
-        $project = Project::create($request->validated());
+        $project = Project::setupCreate($request->validated());
 
-        return redirect()->route('projects.index');
+        return redirect()->route('projects.index')->with('message', "$project->name created successfully")->with('project', $project);
     }
 
     /**
@@ -48,9 +71,14 @@ class ProjectController extends Controller
         if (!$project instanceof Project) {
             return abort(404, 'Project not found');
         }
-
+                
         $statuses = $project->statuses()->with('tasks')->get();
         $notifications = $project->notifications()->get();
+
+        $project = $project->withCount('members');
+        $project = $project->withCount('notifications');
+        
+        $project = $project->first();
 
         return Inertia::render('Projects/Show', [
             'project' => $project,
@@ -84,7 +112,7 @@ class ProjectController extends Controller
 
         $project->update($request->validated());
 
-        return redirect()->route('projects.index');
+        return redirect()->route('projects.index')->with('message', "$project->name updated successfully")->with('project', $project);
     }
 
     /**
@@ -96,8 +124,10 @@ class ProjectController extends Controller
             return abort(404, 'Project not found');
         }
 
-        $project->delete();
+        $project_name = $project->name;
 
-        return redirect()->route('projects.index');
+        $project->setupDelete();
+
+        return redirect()->route('projects.index')->with('message', "$project_name deleted successfully");
     }
 }

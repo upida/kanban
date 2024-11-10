@@ -14,7 +14,6 @@ class Status extends Model
     protected $fillable = [
         'project_id',
         'name',
-        'notification',
     ];
 
     protected $casts = [

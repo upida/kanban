@@ -9,27 +9,43 @@ class AnalyticsController extends Controller
 {
     public function index()
     {
-        // Get all projects with their related statuses and tasks
-        $projects = Project::with(['statuses', 'tasks'])->get();
+        $projects = Project::with(['statuses', 'statuses.tasks'])->withCount([
+            'tasks as tasks_completed' => function ($query) {
+                return $query->where('done', true);
+            },
+            'tasks'
+        ])->get();
 
-        // Count total projects
-        $projectsCount = $projects->count();
+        $total_projects = $projects->count();
 
-        // Count total statuses across all projects
-        $statusesCount = $projects->sum(function ($project) {
-            return $project->statuses->count();
+        $total_statuses = $projects->sum(function ($project) {
+            return $project->statuses()->count();
         });
 
-        // Count total tasks across all projects
-        $tasksCount = $projects->sum(function ($project) {
-            return $project->tasks->count();
+        $total_tasks = $projects->sum(function ($project) {
+            return $project->tasks()->count();
         });
+
+        $total_members = $projects->sum(function ($project) {
+            return $project->members()->count();
+        });
+
+        $projects = $projects->sortBy('started_at')->toArray();
+
+        foreach ($projects as $key => $project) {
+            if ($project['tasks_completed'] === 0 || $project['tasks_count'] === 0) {
+                $projects[$key]['progress'] = 0;
+            } else {
+                $projects[$key]['progress'] = round(($project['tasks_completed'] / $project['tasks_count']) * 100, 2);
+            }
+        }
 
         return inertia('Analytics/Index', [
-            'projectsCount' => $projectsCount,
-            'statusesCount' => $statusesCount,
-            'tasksCount' => $tasksCount,
-            'projects' => $projects, // Pass projects to the view for chart data
+            'total_projects' => $total_projects,
+            'total_statuses' => $total_statuses,
+            'total_tasks' => $total_tasks,
+            'total_members' => $total_members,
+            'projects' => array_values($projects),
         ]);
     }
 }

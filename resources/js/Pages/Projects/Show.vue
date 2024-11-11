@@ -1,8 +1,7 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import TableCreate from '@/Components/TableCreate.vue';
 import NavLink from '@/Components/NavLink.vue';
 import { PencilIcon, TrashIcon } from '@heroicons/vue/24/outline';
 import moment from 'moment';
@@ -34,12 +33,10 @@ const currentTask = ref(null);
 const currentStatus = ref(null);
 const loading = ref({});
 
-const columns_status = {
-    id: [],
-    name: ['editable', 'string'],
-    created_at: [],
-    updated_at: [],
-};
+const formStatus = useForm({
+    project_id: props.project.id,
+    name: '',
+});
 
 const showEditTaskModal = (task) => {
     currentTask.value = { ...task };
@@ -133,17 +130,12 @@ function deleteStatus(status) {
     });
 }
 
-function addStatus(data, nextAction, errorAction) {
-    data.project_id = props.project.id;
-    router.post('/projects/' + props.project.id + '/statuses', data, {
+function addStatus() {
+    formStatus.post('/projects/' + props.project.id + '/statuses', {
         preserveScroll: true,
         onSuccess: () => {
-            nextAction();
-        },
-        onError: (error) => {
-            console.log('error', error);
-            errorAction(error);
-        },
+            formStatus.reset();
+        }
     });
 }
 
@@ -193,7 +185,7 @@ function optionMembers() {
         <template #header>
             <div class="flex h-5 justify-between">
                 <h2 class="flex items-center gap-4 text-xl font-semibold leading-tight text-gray-800">
-                    {{ project.name }}
+                    {{ project.name }} {{ project.progress }}%
                 </h2>
                 <div class="flex items-center gap-4">
                     <NavLink
@@ -202,13 +194,6 @@ function optionMembers() {
                     >
                         <v-icon icon="mdi-bell" class="mr-2" />
                         {{ project.notifications_count ?? 0 }} unread
-                    </NavLink>
-                    <NavLink
-                        :href="route('projects.analytics', { project: project.id })"
-                        class="inline-flex items-center rounded-md border border-transparent bg-white px-4 py-2 text-sm font-medium text-indigo-600 shadow-sm hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        <v-icon icon="mdi-chart-bar" class="mr-2" />
-                        Analytics
                     </NavLink>
                     <NavLink
                         :href="route('projects.members', { project: project.id })"
@@ -223,11 +208,6 @@ function optionMembers() {
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
-                <h3 class="text-xl font-semibold leading-tight text-gray-800">
-                    Create a new status
-                </h3>
-                <TableCreate :columns="columns_status" @addData="addStatus" />
-
                 <div class="flex flex-col gap-4 w-full">
                     <div class="flex gap-4 overflow-x-auto w-full pb-6">
                         <div
@@ -236,6 +216,10 @@ function optionMembers() {
                             class="flex-shrink-0 flex flex-col gap-4 bg-gray-100 p-4 rounded shadow-lg w-1/4"
                             style="width: 300px;"
                         >
+                            <v-progress-linear
+                                v-model="status.progress"
+                                color="indigo-darken-2"
+                            ></v-progress-linear>
                             <div class="flex justify-between">
                                 <h3 class="font-semibold">{{ status.name }}</h3>
                                 <div class="flex space-x-2">
@@ -253,7 +237,15 @@ function optionMembers() {
                                     :key="task.id"
                                     class="p-2 border rounded bg-white shadow mb-2 flex items-center justify-between"
                                 >
-                                    <span>{{ task.title }}</span>
+                                    <span>
+                                        <v-icon
+                                            v-if="task.done"
+                                            icon="mdi-check"
+                                            color="green"
+                                            size="x-small"
+                                        ></v-icon>
+                                        {{ task.title }}
+                                    </span>
                                     <div class="flex space-x-2">
                                         <button @click="showEditTaskModal(task)">
                                             <PencilIcon class="h-5 w-5 text-blue-500 hover:text-blue-700" />
@@ -272,6 +264,20 @@ function optionMembers() {
                                     class="border rounded p-2 flex-grow"
                                 />
                                 <button @click="addTask(status)" class="ml-2 p-2 bg-green-500 text-white rounded">Add</button>
+                            </div>
+                        </div>
+                        <div
+                            class="flex-shrink-0 flex flex-col gap-4 bg-gray-100 p-4 rounded shadow-lg w-1/4"
+                            style="width: 300px;"
+                        >
+                            <div class="flex justify-between">
+                                <v-text-field
+                                    v-model="formStatus.name"
+                                    label="Status Name"
+                                    required
+                                    appendInnerIcon="mdi-plus"
+                                    @click:append-inner="addStatus"
+                                />
                             </div>
                         </div>
                     </div>

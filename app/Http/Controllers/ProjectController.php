@@ -19,7 +19,12 @@ class ProjectController extends Controller
     {
         $memberships = Member::joined()->with([
             'project' => function ($subquery) {
-                return $subquery->withCount('notifications')->withCount('members');
+                return $subquery->withCount('notifications')->withCount('members')->withCount([
+                    'tasks as tasks_completed' => function ($query) {
+                        return $query->where('done', true);
+                    },
+                    'tasks'
+                ]);
             }
         ])->get();
 
@@ -32,6 +37,11 @@ class ProjectController extends Controller
         $projects = [];
 
         foreach ($memberships as $membership) {
+            if ($membership['project']['tasks_completed'] === 0 || $membership['project']['tasks_count'] === 0) {
+                $membership['project']['progress'] = 0;
+            } else {
+                $membership['project']['progress'] = round(($membership['project']['tasks_completed'] / $membership['project']['tasks_count']) * 100, 2);
+            }
             $projects[] = array_merge(
                 $membership['project'],
                 [
@@ -74,14 +84,31 @@ class ProjectController extends Controller
                 
         $statuses = $project->statuses()->with(['tasks' => function($subquery) {
             return $subquery->with('members');
-        }])->get();
+        }])->withCount([
+            'tasks as tasks_completed' => function ($subsubquery) {
+                return $subsubquery->where('done', true);
+            },
+            'tasks'
+        ])->get();
         $notifications = $project->notifications()->get();
         $members = $project->members()->with('user')->get();
 
         $project = $project->withCount('members');
         $project = $project->withCount('notifications');
+        $project = $project->withCount([
+            'tasks as tasks_completed' => function ($query) {
+                return $query->where('done', true);
+            },
+            'tasks'
+        ]);
         
         $project = $project->first();
+
+        $project->progress = ($project->tasks_completed !== 0 && $project->tasks_count !== 0) ? round(($project->tasks_completed / $project->tasks_count) * 100, 2) : 0;
+
+        foreach ($statuses as $status) {
+            $status->progress = ($status->tasks_completed !== 0 && $status->tasks_count !== 0) ? round(($status->tasks_completed / $status->tasks_count) * 100, 2) : 0;
+        }
 
         return Inertia::render('Projects/Show', [
             'project' => $project,

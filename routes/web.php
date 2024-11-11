@@ -41,6 +41,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create'); // view projects.create
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
 
+    Route::get('/projects/analytics', [AnalyticsController::class, 'index'])->name('projects.analytics');
+
     Route::middleware([RoleMiddleware::class])->group(function () {
         Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show'); // view projects.show
         Route::get('/projects/{project}/edit', [ProjectController::class, 'edit'])->name('projects.edit'); // view projects.edit
@@ -52,8 +54,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/projects/{project}/statuses/{status}', [StatusController::class, 'destroy'])->name('projects.statuses.destroy');
 
         Route::get('/projects/{project}/members', [MemberController::class, 'index'])->name('projects.members');
-       
-        Route::get('/projects/{project}/analytics', [AnalyticsController::class, 'index'])->name('projects.analytics');
        
         Route::get('/projects/{project}/notifications', [NotificationController::class, 'index'])->name('projects.notifications');
         Route::get('/projects/{project}/notifications/{notification}', [NotificationController::class, 'show'])->name('projects.notifications.show');

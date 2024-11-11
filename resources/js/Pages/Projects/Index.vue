@@ -121,6 +121,10 @@ function show(row) {
                     rounded="lg"
                     variant="flat"
                 >
+                    <v-progress-linear
+                        v-model="project.progress"
+                        color="indigo-darken-2"
+                    ></v-progress-linear>
                     <v-card-item>
                         <v-card-title class="text-body-2 d-flex align-center">
                         <v-icon
@@ -266,7 +270,7 @@ function show(row) {
                             variant="outlined"
                             @click="show(project)"
                         >
-                            Tasks
+                            View
                         </v-btn>
                     </div>
                 </v-card>

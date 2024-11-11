@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
+use App\Models\Project;
 use Illuminate\Http\Request;
 
 class NotificationController extends Controller
@@ -9,9 +11,14 @@ class NotificationController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Project $project)
     {
-        //
+        $notifications = $project->notifications()->orderBy('created_at', 'desc')->get();
+
+        return inertia('Notifications/Index', [
+            'project' => $project,
+            'notifications' => $notifications,
+        ]);
     }
 
     /**
@@ -25,9 +32,17 @@ class NotificationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(Project $project, Notification $notification)
     {
-        //
+        $notification->read = true;
+        $notification->save();
+
+        $notification = $notification->load('project', 'task');
+
+        return inertia('Notifications/Show', [
+            'project' => $project,
+            'notification' => $notification,
+        ]);
     }
 
     /**

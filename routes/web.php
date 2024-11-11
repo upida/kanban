@@ -57,8 +57,8 @@ Route::middleware('auth')->group(function () {
        
         Route::get('/projects/{project}/notifications', [NotificationController::class, 'index'])->name('projects.notifications');
         Route::get('/projects/{project}/notifications/{notification}', [NotificationController::class, 'show'])->name('projects.notifications.show');
-        Route::patch('/projects/{project}/notifications/{notification}/read', [NotificationController::class, 'updateRead'])->name('projects.notifications.updateRead');
     
+        Route::get('/projects/{project}/tasks/{task}', [ProjectController::class, 'show'])->name('projects.show.tasks');
         Route::post('/projects/{project}/tasks', [TaskController::class, 'store'])->name('tasks.store');
         Route::patch('/projects/{project}/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
         Route::delete('/projects/{project}/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');

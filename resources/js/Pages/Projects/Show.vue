@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import NavLink from '@/Components/NavLink.vue';
@@ -10,6 +10,9 @@ const props = defineProps({
     project: {
         type: Object,
         required: true,
+    },
+    task: {
+        type: Object,
     },
     statuses: {
         type: Array,
@@ -53,6 +56,7 @@ const showEditStatusModal = (status) => {
 
 const hideEditTaskModal = () => {
     isEditTaskModalVisible.value = false;
+    router.get('/projects/' + props.project.id, {}, { preserveState: true });
 };
 
 const hideEditStatusModal = () => {
@@ -176,6 +180,12 @@ function optionMembers() {
         }
     });
 }
+
+onMounted(() => {
+    if (props.task) {
+        showEditTaskModal(props.task);
+    }
+});
 </script>
 
 <template>

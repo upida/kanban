@@ -38,6 +38,10 @@ console_command = 'php /var/www/html/artisan tinker'
   min_machines_running = 1
   processes = ['app']
 
+[processes]
+  app = "php artisan serve --host=0.0.0.0 --port=8080"
+  worker = "php artisan queue:work --sleep=3 --tries=3"
+
 [[vm]]
   memory = '1gb'
   cpu_kind = 'shared'

@@ -5,6 +5,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TableCreate from '@/Components/TableCreate.vue';
 import NavLink from '@/Components/NavLink.vue';
 import { PencilIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import moment from 'moment';
 
 const props = defineProps({
     project: {
@@ -19,6 +20,10 @@ const props = defineProps({
         type: Array,
         required: true,
     },
+    members: {
+        type: Array,
+        required: true,
+    },
 });
 
 const newStatusName = ref('');
@@ -27,6 +32,7 @@ const isEditTaskModalVisible = ref(false);
 const isEditStatusModalVisible = ref(false);
 const currentTask = ref(null);
 const currentStatus = ref(null);
+const loading = ref({});
 
 const columns_status = {
     id: [],
@@ -37,6 +43,7 @@ const columns_status = {
 
 const showEditTaskModal = (task) => {
     currentTask.value = { ...task };
+    currentTask.value.members = currentTask.value.members.map(member => member.member_id);
     isEditTaskModalVisible.value = true;
 };
 
@@ -57,6 +64,11 @@ const hideEditStatusModal = () => {
 
 const updateTask = () => {
     if (currentTask.value) {
+        loading.value['updateTask'] = true;
+
+        if (currentTask.value.deadline) {
+            currentTask.value.deadline = moment(currentTask.value.deadline).format('YYYY-MM-DD HH:mm:ss');
+        }
         router.patch(`/projects/${props.project.id}/tasks/${currentTask.value.id}`, currentTask.value, {
             preserveScroll: true,
             onSuccess: () => {
@@ -64,9 +76,11 @@ const updateTask = () => {
                     preserveScroll: true,
                 });
                 hideEditTaskModal();
+                loading.value['updateTask'] = false;
             },
             onError: (error) => {
                 console.error('Error updating task:', error);
+                loading.value['updateTask'] = false;
             },
         });
     }
@@ -140,8 +154,6 @@ function addTask(status) {
                 `/projects/${props.project.id}/tasks`,
                 {
                     title: newTaskName.value,
-                    description: 'Test Description',
-                    deadline: '2024-10-26 10:00:00',
                     done: false,
                     status_id: status.id,
                 },
@@ -161,6 +173,16 @@ function addTask(status) {
             console.error("Error adding task:", error);
         }
     }
+}
+
+function optionMembers() {
+    return props.members.map(member => {
+        return {
+            title: member.user.name,
+            subtitle: member.user.email,
+            value: member.id,
+        }
+    });
 }
 </script>
 
@@ -259,7 +281,7 @@ function addTask(status) {
 
         <!-- Modal untuk mengedit task -->
         <div v-if="isEditTaskModalVisible" class="fixed inset-0 flex items-center justify-center background-black bg-opacity-50">
-            <v-card class="bg-white p-6 rounded shadow-lg w-1/3">
+            <v-card class="bg-white p-6 rounded shadow-lg w-1/3 overflow-y-auto">
                 <v-toolbar class="bg-white">
                     <v-toolbar-title>Edit Task</v-toolbar-title>
                     <v-toolbar-items>
@@ -276,12 +298,12 @@ function addTask(status) {
                         label="Task Title"
                         required
                     />
-                    <v-textarea
+                    <v-text-field
                         v-model="currentTask.description"
                         label="Description"
                         required
                     />
-                    <div>
+                    <div class="mt-2">
                         <label class="mr-3">Deadline</label>
                         <input
                             v-model="currentTask.deadline"
@@ -290,7 +312,7 @@ function addTask(status) {
                             required
                         />
                     </div>
-                    <div>
+                    <div class="mt-5">
                         <label class="mr-3">Status</label>
                         <select
                             v-model="currentTask.status_id"
@@ -301,6 +323,7 @@ function addTask(status) {
                             </option>
                         </select>
                     </div>
+                    <v-select :items="optionMembers()" label="Members" multiple v-model="currentTask.members" class="mt-8" />
                 </v-card-text>
                 <v-card-actions>
                     <v-spacer></v-spacer>
@@ -309,9 +332,21 @@ function addTask(status) {
                         @click="hideEditTaskModal"
                     />
                     <v-btn
+                        v-if="!loading['updateTask']"
                         text="Save"
                         @click="updateTask"
                     />
+                    <v-btn
+                        v-else
+                        class="ml-auto"
+                    >
+                        <v-progress-circular
+                            color="indigo"
+                            indeterminate
+                            size="24"
+                            width="2"
+                        ></v-progress-circular>
+                    </v-btn>
                 </v-card-actions>
             </v-card>
         </div>

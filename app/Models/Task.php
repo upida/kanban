@@ -41,4 +41,9 @@ class Task extends Model
     {
         return $this->hasMany(Notification::class);
     }
+
+    public function members(): HasMany
+    {
+        return $this->hasMany(TaskMember::class);
+    }
 }

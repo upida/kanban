@@ -29,8 +29,8 @@ class TaskStoreRequest extends FormRequest
 
         return [
             'title' => ['required', 'string', 'max:255'],
-            'description' => ['required', 'string', 'max:255'],
-            'deadline' => ['required', 'date', 'date_format:Y-m-d H:i:s'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'deadline' => ['nullable', 'date', 'date_format:Y-m-d H:i:s'],
             'done' => ['boolean'],
             'project_id' => ['required', 'exists:projects,id'],
             'status_id' => ['required', 'exists:statuses,id'],

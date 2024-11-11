@@ -76,8 +76,35 @@ class TaskController extends Controller
         if (!$task instanceof Task) {
             return abort(404, 'Task not found');
         }
+
+        $members = $task->members()->get();
+
+        $request_members = $request->members ?? [];
+
+        usort($request_members, function ($a, $b) {
+            return $a - $b;
+        });
         
-        $task->update($request->validated());
+        $current_members = array_column($members->toArray() ?? [], 'member_id');
+        usort($current_members, function ($a, $b) {
+            return $a - $b;
+        });
+
+        if ($request_members != $current_members) {
+            $new_members = array_map(function ($member) {
+                return [
+                    'member_id' => $member
+                ];
+            }, $request->members);
+            
+            $task->members()->delete();
+            $task->members()->createMany($new_members);
+        }
+
+        $updated = $request->validated();
+        unset($updated['members']);
+
+        $task->update($updated);
 
         $notification = $project->notifications()->create([
             'user_id' => $project->owner()->id,

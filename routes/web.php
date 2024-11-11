@@ -8,6 +8,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\TaskMemberController;
 use App\Http\Middleware\RoleMiddleware;
 use App\Mail\SendEmail;
 use Illuminate\Foundation\Application;
@@ -61,6 +62,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/projects/{project}/tasks', [TaskController::class, 'store'])->name('tasks.store');
         Route::patch('/projects/{project}/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
         Route::delete('/projects/{project}/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
+
+        Route::post('/projects/{project}/tasks/{task}/members/{member}', [TaskMemberController::class, 'store'])->name('tasks.members.store');
+        Route::delete('/projects/{project}/tasks/{task}/members/{taskMember}', [TaskMemberController::class, 'destroy'])->name('tasks.members.destroy');
     });
 
     Route::post('/projects/{project}/members/invite', [MemberController::class, 'invite'])->name('projects.members.invite')->middleware(RoleMiddleware::class.':owner');

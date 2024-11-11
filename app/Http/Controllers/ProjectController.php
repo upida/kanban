@@ -72,8 +72,11 @@ class ProjectController extends Controller
             return abort(404, 'Project not found');
         }
                 
-        $statuses = $project->statuses()->with('tasks')->get();
+        $statuses = $project->statuses()->with(['tasks' => function($subquery) {
+            return $subquery->with('members');
+        }])->get();
         $notifications = $project->notifications()->get();
+        $members = $project->members()->with('user')->get();
 
         $project = $project->withCount('members');
         $project = $project->withCount('notifications');
@@ -84,6 +87,7 @@ class ProjectController extends Controller
             'project' => $project,
             'statuses' => $statuses,
             'notifications' => $notifications,
+            'members' => $members,
         ]);
     }
 

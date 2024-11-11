@@ -37,6 +37,11 @@ class Member extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function task_members(): HasMany
+    {
+        return $this->hasMany(TaskMember::class);
+    }
+
     public static function scopeJoined(Builder $query): Builder
     {
         return $query->with(['invitations' => function ($query) {

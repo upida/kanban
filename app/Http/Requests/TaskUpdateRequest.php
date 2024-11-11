@@ -23,10 +23,12 @@ class TaskUpdateRequest extends FormRequest
     {
         return [
             'title' => ['string', 'max:255'],
-            'description' => ['string', 'max:255'],
-            'deadline' => ['date', 'date_format:Y-m-d H:i:s'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'deadline' => ['nullable', 'date', 'date_format:Y-m-d H:i:s'],
             'done' => ['boolean'],
             'status_id' => ['exists:statuses,id'],
+            'members' => ['array'],
+            'members.*' => ['exists:members,id'],
         ];
     }
 }

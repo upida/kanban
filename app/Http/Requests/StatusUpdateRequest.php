@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StatusUpdateRequest extends FormRequest
 {
@@ -21,9 +22,18 @@ class StatusUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        $project_id = $this->get('project_id');
+        $name = $this->get('name');
+
         return [
             'project_id' => ['exists:projects,id,' . $this->status->project_id],
-            'name' => ['string', 'max:255', 'unique:statuses,name,' . $this->status->id],
+            'name' => ['string', 'max:255', Rule::unique('statuses')->where(
+                function ($query) use ($project_id, $name) {
+                    $query->where('project_id', $project_id)
+                        ->where('name', $name)
+                        ->where('id', '!=', $this->status->id);
+                }
+            )],
         ];
     }
 }

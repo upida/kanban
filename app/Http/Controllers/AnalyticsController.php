@@ -9,12 +9,15 @@ class AnalyticsController extends Controller
 {
     public function index()
     {
-        $projects = Project::with(['statuses', 'statuses.tasks'])->withCount([
+        $projects = Project::join('members', 'projects.id', '=', 'members.project_id')->with(['statuses', 'statuses.tasks'])->withCount([
             'tasks as tasks_completed' => function ($query) {
                 return $query->where('done', true);
             },
             'tasks'
-        ])->get();
+        ])->where(function ($query) {
+            $query->where('user_id', auth('web')->user()->id)
+            ->orWhere('members.user_id', auth('web')->user()->id);
+        })->get();
 
         $total_projects = $projects->count();
 

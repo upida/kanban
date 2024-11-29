@@ -1,9 +1,12 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { ref, computed } from 'vue';
-import { Head, router, usePage } from '@inertiajs/vue3';
-import NavLink from '@/Components/NavLink.vue';
-import moment from 'moment';
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import Dialog from "@/Components/Dialog.vue";
+
+import { ref, computed, reactive } from "vue";
+import { Head, router, usePage } from "@inertiajs/vue3";
+import NavLink from "@/Components/NavLink.vue";
+import moment from "moment";
+import { useHelper } from "@/helper";
 
 const props = defineProps({
     projects: {
@@ -14,52 +17,62 @@ const props = defineProps({
 
 const user = usePage().props.auth.user;
 
+const modal = reactive({
+    detail: false,
+    delete: false,
+});
 const loading = ref({});
 
 props.projects.forEach((project) => {
     loading.value[project.id] = false;
 });
 
-const filterText = ref('');
+const filterText = ref("");
 
 const filteredProjects = computed(() => {
     if (!filterText.value) {
         return props.projects; // return all projects if no filter
     }
-    return props.projects.filter(project => {
+    return props.projects.filter((project) => {
         return (
-            project.name.toLowerCase().includes(filterText.value.toLowerCase()) ||
-            project.description?.toLowerCase().includes(filterText.value.toLowerCase()) ||
-            project.started_at.toLowerCase().includes(filterText.value.toLowerCase()) ||
-            project.ended_at.toLowerCase().includes(filterText.value.toLowerCase())
+            project.name
+                .toLowerCase()
+                .includes(filterText.value.toLowerCase()) ||
+            project.description
+                ?.toLowerCase()
+                .includes(filterText.value.toLowerCase()) ||
+            project.started_at
+                .toLowerCase()
+                .includes(filterText.value.toLowerCase()) ||
+            project.ended_at
+                .toLowerCase()
+                .includes(filterText.value.toLowerCase())
         );
     });
 });
 
 const columns = {
-    name: ['editable', 'string'],
-    description: ['editable', 'string'],
-    started_at: ['editable', 'date'],
-    ended_at: ['editable', 'date'],
-}
+    name: ["editable", "string"],
+    description: ["editable", "string"],
+    started_at: ["editable", "date"],
+    ended_at: ["editable", "date"],
+};
 
-function toggelEdit(row) {
-    
-}
+function toggelEdit(row) {}
 
 function editData(row) {
     loading.value[row.id] = true;
 
-    row.started_at = moment(row.started_at).format('YYYY-MM-DD HH:mm:ss');
-    row.ended_at = moment(row.ended_at).format('YYYY-MM-DD HH:mm:ss');
+    row.started_at = moment(row.started_at).format("YYYY-MM-DD HH:mm:ss");
+    row.ended_at = moment(row.ended_at).format("YYYY-MM-DD HH:mm:ss");
 
-    router.patch('/projects/' + row.id, row, {
+    router.patch("/projects/" + row.id, row, {
         preserveScroll: true,
         onSuccess: () => {
             loading.value[row.id] = false;
         },
         onError: (error) => {
-            console.log('error', error);
+            console.log("error", error);
             loading.value[row.id] = false;
         },
     });
@@ -67,20 +80,25 @@ function editData(row) {
 
 function deleteData(row) {
     if (confirm(`Are you sure you want to delete ${row.name}?`)) {
-        router.delete('/projects/' + row.id, {
+        router.delete("/projects/" + row.id, {
             preserveScroll: true,
             onSuccess: () => {
-                console.log('success');
+                console.log("success");
             },
             onError: (error) => {
-                console.log('error', error);
+                console.log("error", error);
             },
         });
     }
 }
 
+const selectedData = ref();
+const openDetail = (data) => {
+    selectedData.value = data;
+    modal.detail = true;
+};
 function show(row) {
-    router.get('/projects/' + row.id);
+    router.get("/projects/" + row.id);
 }
 </script>
 
@@ -90,7 +108,9 @@ function show(row) {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex h-5 justify-between">
-                <h2 class="flex items-center gap-4 text-xl font-semibold leading-tight text-gray-800">
+                <h2
+                    class="flex items-center gap-4 text-xl font-semibold leading-tight text-gray-800"
+                >
                     Projects
                 </h2>
 
@@ -116,165 +136,203 @@ function show(row) {
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                     />
                 </div>
-                <v-card
-                    v-for="project in filteredProjects" :key="project.id"
-                    rounded="lg"
-                    variant="flat"
-                >
-                    <v-progress-linear
-                        v-model="project.progress"
-                        color="indigo-darken-2"
-                    ></v-progress-linear>
-                    <v-card-item>
-                        <v-card-title class="text-body-2 d-flex align-center">
-                        <v-icon
-                            :color="(project.notifications_count > 0) ? 'red-lighten-4' : 'disabled'"
-                            icon="mdi-bell"
-                            size="x-small"
-                        ></v-icon>
-
-                        <span class="text-caption text-medium-emphasis ms-1 font-weight-light">
-                            {{ project.notifications_count }} unread
-                        </span>
-
-                        <v-spacer></v-spacer>
-
-                        <v-chip
-                            class="ms-2 text-medium-emphasis"
-                            color="indigo-lighten-4"
-                            prepend-icon="mdi-account"
-                            size="small"
+                <v-row>
+                    <v-col
+                        v-for="project in filteredProjects"
+                        :key="project.id"
+                        cols="12"
+                        md="4"
+                    >
+                        <v-card
+                            @click="openDetail(project)"
+                            rounded="lg"
                             variant="flat"
+                            :class="[
+                                modal.detail &&
+                                selectedData &&
+                                Object.keys(selectedData).length > 0 &&
+                                selectedData.id === project.id
+                                    ? ' border-2 border-black bg-gray-100'
+                                    : '',
+                                'hover:cursor-pointer',
+                            ]"
                         >
-                            {{ (user.id === project.owner.id) ? 'You' : project.owner.name }}
-                        </v-chip>
+                            <v-card-item>
+                                <v-card-title
+                                    class="text-body-2 d-flex align-center"
+                                >
+                                    <v-icon
+                                        :color="
+                                            project.notifications_count > 0
+                                                ? 'red-lighten-4'
+                                                : 'disabled'
+                                        "
+                                        icon="mdi-bell"
+                                        size="x-small"
+                                    ></v-icon>
 
-                        <v-chip
-                            class="ms-2 text-medium-emphasis"
-                            color="grey-lighten-4"
-                            prepend-icon="mdi-account-multiple"
-                            size="small"
-                            variant="flat"
-                        >
-                            {{ project.members_count }}
-                        </v-chip>
-                        </v-card-title>
+                                    <span
+                                        class="text-caption text-medium-emphasis ms-1 font-weight-light"
+                                    >
+                                        {{ project.notifications_count }}
+                                        unread
+                                    </span>
 
-                        <div class="py-2">
-                        <div class="text-h6">{{ project.name }}</div>
+                                    <v-spacer></v-spacer>
+                                </v-card-title>
 
-                        <div v-if="project.description" class="font-weight-light text-medium-emphasis">
-                           {{ project.description }}
-                        </div>
-                        </div>
-                    </v-card-item>
+                                <div class="py-2 d-flex align-center">
+                                    <div
+                                        @click.prevent="show(project)"
+                                        class="text-h6 hover:underline hover:cursor-pointer"
+                                    >
+                                        {{ project.name }}
+                                    </div>
+                                </div>
+                                <div class="d-flex align-center">
+                                    <div>
+                                        <v-icon
+                                            icon="mdi-calendar"
+                                            size="small"
+                                            start
+                                        ></v-icon>
+                                        <span
+                                            class="text-medium-emphasis font-weight-bold"
+                                            >Start:
+                                            {{
+                                                useHelper().formatDate(
+                                                    project.started_at
+                                                )
+                                            }}</span
+                                        >
+                                    </div>
 
-                    <v-divider></v-divider>
+                                    <v-spacer></v-spacer>
+                                    <div>
+                                        <v-icon
+                                            icon="mdi-bullseye-arrow"
+                                            size="small"
+                                            start
+                                        ></v-icon>
+                                        <span
+                                            class="text-medium-emphasis font-weight-bold"
+                                            >End:
+                                            {{
+                                                useHelper().formatDate(
+                                                    project.ended_at
+                                                )
+                                            }}</span
+                                        >
+                                    </div>
 
-                    <div class="pa-4 d-flex align-center">
-                        <v-icon
-                            icon="mdi-calendar"
-                            color="indigo"
-                            start
-                        ></v-icon>
-
-                        <span class="text-medium-emphasis font-weight-bold">{{ project.started_at + ' - ' + project.ended_at }}</span>
-
-                        <v-spacer></v-spacer>
-
-                        <v-menu>
-                            <template v-slot:activator="{ props }">
-                                <v-btn icon="mdi-dots-vertical" variant="text" class="mr-1" v-bind="props"></v-btn>
-                            </template>
-
-                            <v-list>
-                                <v-list-item class="cursor-pointer">
-                                    <template v-slot:prepend>
-                                        <v-icon icon="mdi-pencil" color="indigo"></v-icon>
-                                    </template>
-                                    <v-list-item-title>Edit</v-list-item-title>
-                                    <v-dialog activator="parent" max-width="500">
-                                        <template v-slot:default="{ isActive }">
-                                            <v-card
-                                                prepend-icon="mdi-pencil"
-                                                :title="'Edit ' + project.name"
-                                            >
-                                                <v-card-text>
-                                                    <v-text-field
-                                                        v-model="project.name"
-                                                        label="Name"
-                                                        required
-                                                    />
-                                                    <v-textarea
-                                                        v-model="project.description"
-                                                        label="Description"
-                                                        required
-                                                    />
-                                                    <div class="mb-4">
-                                                        <label class="mr-3">Started at</label>
-                                                        <input
-                                                            v-model="project.started_at"
-                                                            type="datetime-local"
-                                                            label="started_at"
-                                                            required
-                                                        />
-                                                    </div>
-                                                    <div class="mb-4">
-                                                        <label class="mr-3">Ended at</label>
-                                                        <input
-                                                            v-model="project.ended_at"
-                                                            type="datetime-local"
-                                                            label="ended_at"
-                                                            required
-                                                        />
-                                                    </div>
-                                                </v-card-text>
-                                                <template v-slot:actions>
-                                                    <v-spacer></v-spacer>
-                                                    <v-btn v-if="loading[project.id] ?? false" color="indigo">
-                                                        <v-progress-circular
-                                                            color="indigo"
-                                                            indeterminate
-                                                            size="24"
-                                                            width="2"
-                                                        ></v-progress-circular>
-                                                    </v-btn>
-                                                    <v-btn
-                                                        v-else
-                                                        text="Save"
-                                                        @click="editData(project)"
-                                                        color="indigo"
-                                                    ></v-btn>
-                                                    <v-btn
-                                                        class="ml-auto"
-                                                        text="Close"
-                                                        @click="isActive.value = false; router.reload()"
-                                                    ></v-btn>
-                                                </template>
-                                            </v-card>
-                                        </template>
-                                    </v-dialog>
-                                </v-list-item>
-                                <v-list-item @click="deleteData(project)" class="cursor-pointer">
-                                    <template v-slot:prepend>
-                                        <v-icon icon="mdi-delete" color="red"></v-icon>
-                                    </template>
-                                    <v-list-item-title>Delete</v-list-item-title>
-                                </v-list-item>
-                            </v-list>
-                        </v-menu>
-
-                        <v-btn
-                            prepend-icon="mdi-book"
-                            color="indigo-darken-4"
-                            variant="outlined"
-                            @click="show(project)"
-                        >
-                            View
-                        </v-btn>
-                    </div>
-                </v-card>
+                                    <!-- <v-btn
+                                    prepend-icon="mdi-book"
+                                    color="indigo-darken-4"
+                                    variant="outlined"
+                                    @click="show(project)"
+                                >
+                                    View
+                                </v-btn> -->
+                                </div>
+                                <v-progress-linear
+                                    class="my-3"
+                                    v-model="project.progress"
+                                    color="indigo-darken-2"
+                                ></v-progress-linear>
+                                <div
+                                    class="text-caption text-medium-emphasis ms-1 font-weight-light"
+                                >
+                                    Last updated:
+                                    <span class="font-weight-bold">{{
+                                        useHelper().formatDate(
+                                            project.updated_at
+                                        )
+                                    }}</span>
+                                </div>
+                            </v-card-item>
+                        </v-card>
+                    </v-col>
+                </v-row>
             </div>
         </div>
+        <!-- Drawer detail-->
+
+        <v-navigation-drawer
+            v-if="selectedData"
+            width="480"
+            elevation="0"
+            v-model="modal.detail"
+            location="right"
+            temporary
+        >
+            <v-form>
+                <v-list>
+                    <div class="flex justify-between items-center">
+                        <v-list-subheader>Project Detail</v-list-subheader>
+                        <v-btn
+                            icon="mdi-close"
+                            flat
+                            @click="modal.detail = false"
+                        ></v-btn>
+                    </div>
+
+                    <v-list-item
+                        ><label for="">Project Name</label>
+                        <v-text-field
+                            v-model="selectedData.name"
+                            label="Name"
+                            required
+                        />
+                        <v-divider></v-divider>
+                    </v-list-item>
+                    <v-list-item
+                        ><label for="">Description</label>
+                        <v-textarea
+                            v-model="selectedData.description"
+                            label="Description"
+                            required
+                        />
+                        <v-divider></v-divider>
+                    </v-list-item>
+                    <v-list-item
+                        ><label for="">Date</label>
+                        <div>
+                            <input
+                                v-model="selectedData.started_at"
+                                type="datetime-local"
+                                label="started_at"
+                                required
+                            />
+
+                            <input
+                                v-model="selectedData.ended_at"
+                                type="datetime-local"
+                                label="ended_at"
+                                required
+                            />
+                        </div>
+                        <v-divider></v-divider>
+                    </v-list-item>
+                    <v-list-item>
+                        <div
+                            class="flex justify-between items-center w-full space-x-5"
+                        >
+                            <v-btn
+                                class="flex-grow"
+                                color="red"
+                                variant="outlined"
+                            >
+                                Delete Project
+                            </v-btn>
+                            <v-btn class="flex-grow" flat color="black">
+                                Update Data
+                            </v-btn>
+                        </div>
+                    </v-list-item>
+                </v-list>
+            </v-form>
+
+            <v-card-text> </v-card-text>
+        </v-navigation-drawer>
     </AuthenticatedLayout>
 </template>

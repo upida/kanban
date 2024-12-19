@@ -1,7 +1,7 @@
 # Base image untuk PHP-FPM
 FROM php:8.2-fpm as base
 
-# Install dependensi sistem untuk PHP
+# Install dependensi sistem untuk PHP dan Node.js
 RUN apt-get update && apt-get install -y \
     curl \
     zip \
@@ -11,7 +11,10 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+    gnupg \
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -25,7 +28,7 @@ COPY . .
 # Install dependensi Laravel
 RUN composer install --no-dev --optimize-autoloader
 
-# Build assets Laravel
+# Build assets Laravel menggunakan Node.js
 RUN npm install && npm run build
 
 # Set izin untuk storage dan cache

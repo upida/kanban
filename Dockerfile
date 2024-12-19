@@ -41,11 +41,8 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 # Copy file konfigurasi Nginx ke dalam container
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy semua file dari PHP stage
-COPY /var/www /var/www
-
 # Set izin folder storage
-RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+RUN chmod -R 775 /storage /bootstrap/cache
 
 # Expose port untuk Nginx
 EXPOSE 80

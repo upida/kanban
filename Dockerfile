@@ -1,5 +1,5 @@
-# Base image untuk PHP-FPM
-FROM php:8.2-fpm as base
+# PHP-FPM
+FROM php:8.2-fpm
 
 # Install dependensi sistem untuk PHP dan Node.js
 RUN apt-get update && apt-get install -y \
@@ -32,7 +32,7 @@ RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 
 # Set izin untuk storage dan cache
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+RUN chown -R www-data:www-data /storage /bootstrap/cache
 
 # ===========================
 # Stage Nginx Configuration
@@ -47,5 +47,5 @@ RUN chmod -R 775 /storage /bootstrap/cache
 # Expose port untuk Nginx
 EXPOSE 80
 
-# Jalankan Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start PHP-FPM and Nginx
+CMD service nginx start && php-fpm

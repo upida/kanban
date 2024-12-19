@@ -1,32 +1,54 @@
-# Use the PHP-FPM image as the base
-FROM php:8.2-fpm
+# Base image untuk PHP-FPM
+FROM php:8.2-fpm as base
 
-# Install system dependencies
+# Install dependensi sistem untuk PHP
 RUN apt-get update && apt-get install -y \
-    zip unzip git libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libxml2-dev nginx \
-    && docker-php-ext-install mysqli gd mbstring pdo_mysql \
-    && docker-php-ext-enable mysqli
+    curl \
+    zip \
+    unzip \
+    git \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set document root
-WORKDIR /var/www/html
+# Set working directory
+WORKDIR /var/www
 
-# Copy WordPress files
+# Copy seluruh file proyek
 COPY . .
 
-# Copy .env.example to .env if .env does not exist
-RUN cp .env.example .env
-
-# Install PHP dependencies using Composer
+# Install dependensi Laravel
 RUN composer install --no-dev --optimize-autoloader
 
-# Install NPM dependencies and build assets
+# Build assets Laravel
 RUN npm install && npm run build
 
-# Expose port 8000
-EXPOSE 8000
+# Set izin untuk storage dan cache
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# Run Laravel server
-CMD php artisan serve --host=0.0.0.0 --port=8000
+# ===========================
+# Stage Nginx Configuration
+# ===========================
+
+# Base image untuk Nginx
+FROM nginx:latest
+
+# Copy file konfigurasi Nginx ke dalam container
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+
+# Copy semua file dari PHP stage
+COPY --from=base /var/www /var/www
+
+# Set izin folder storage
+RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
+# Expose port untuk Nginx
+EXPOSE 80
+
+# Jalankan Nginx
+CMD ["nginx", "-g", "daemon off;"]

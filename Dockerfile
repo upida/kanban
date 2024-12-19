@@ -38,9 +38,6 @@ RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 # Stage Nginx Configuration
 # ===========================
 
-# Base image untuk Nginx
-FROM nginx:latest
-
 # Copy file konfigurasi Nginx ke dalam container
 COPY ./nginx.conf /etc/nginx/conf.d/default.conf
 

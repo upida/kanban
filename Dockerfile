@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
+    nginx \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Install Composer
@@ -35,6 +36,9 @@ RUN npm install && npm run build
 # Set permissions for storage and bootstrap/cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Expose port and set Octane as the entrypoint
-EXPOSE 8000
-CMD php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000
+# Copy Nginx configuration
+COPY ./docker/nginx.conf /etc/nginx/sites-enabled/default
+
+# Expose port and start PHP-FPM & Nginx
+EXPOSE 80
+CMD service nginx start && php-fpm

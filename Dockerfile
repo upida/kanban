@@ -37,7 +37,7 @@ RUN npm install && npm run build
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Copy Nginx configuration
-COPY ./docker/nginx.conf /etc/nginx/sites-enabled/default
+COPY nginx.conf /etc/nginx/sites-enabled/default
 
 # Expose port and start PHP-FPM & Nginx
 EXPOSE 80

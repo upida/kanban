@@ -42,7 +42,7 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 COPY nginx.conf /etc/nginx/sites-enabled/default
 
 # Set environment variables from copy of .env.example file
-RUN cp /var/www/html/.env.example /var/www/html/.env
+RUN cp .env.example .env
 
 # Expose port and start PHP-FPM & Nginx
 EXPOSE 80

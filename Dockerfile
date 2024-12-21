@@ -2,7 +2,9 @@
 FROM php:8.2-fpm
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update
+
+RUN apt-get install -y \
     libpng-dev \
     zip \
     unzip \

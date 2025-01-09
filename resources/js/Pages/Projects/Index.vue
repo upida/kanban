@@ -1,7 +1,9 @@
 <script setup>
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
 import Dialog from "@/Components/Dialog.vue";
-
+import TextInput from "@/Components/TextInput.vue";
+import TextArea from "@/Components/TextArea.vue";
+import DatePicker from "@/Components/DatePicker.vue";
 import { ref, computed, reactive } from "vue";
 import { Head, router, usePage } from "@inertiajs/vue3";
 import NavLink from "@/Components/NavLink.vue";
@@ -20,6 +22,7 @@ const user = usePage().props.auth.user;
 const modal = reactive({
     detail: false,
     delete: false,
+    create: false,
 });
 const loading = ref({});
 
@@ -62,14 +65,21 @@ function toggelEdit(row) {}
 
 function editData(row) {
     loading.value[row.id] = true;
+    const payload = {
+        ...selectedData.value,
+        started_at: moment(selectedData.value.range[0]).format(
+            "YYYY-MM-DD HH:mm:ss"
+        ),
+        ended_at: moment(selectedData.value.range[1]).format(
+            "YYYY-MM-DD HH:mm:ss"
+        ),
+    };
 
-    row.started_at = moment(row.started_at).format("YYYY-MM-DD HH:mm:ss");
-    row.ended_at = moment(row.ended_at).format("YYYY-MM-DD HH:mm:ss");
-
-    router.patch("/projects/" + row.id, row, {
+    router.patch("/projects/" + selectedData.value.id, payload, {
         preserveScroll: true,
         onSuccess: () => {
             loading.value[row.id] = false;
+            modal.detail = false;
         },
         onError: (error) => {
             console.log("error", error);
@@ -79,11 +89,14 @@ function editData(row) {
 }
 
 function deleteData(row) {
-    if (confirm(`Are you sure you want to delete ${row.name}?`)) {
-        router.delete("/projects/" + row.id, {
+    if (
+        confirm(`Are you sure you want to delete ${selectedData.value.name}?`)
+    ) {
+        router.delete("/projects/" + selectedData.value.id, {
             preserveScroll: true,
             onSuccess: () => {
                 console.log("success");
+                modal.detail = false;
             },
             onError: (error) => {
                 console.log("error", error);
@@ -93,8 +106,41 @@ function deleteData(row) {
 }
 
 const selectedData = ref();
+const form = reactive({
+    name: "",
+    description: "",
+    range: [],
+});
+
+const clearForm = () => {
+    form.name = "";
+    form.description = "";
+    form.range = [];
+};
+const createData = () => {
+    if (!form.description) delete form.description;
+    form.started_at = moment(form.range[0]).format("YYYY-MM-DD HH:mm:ss");
+    form.ended_at = moment(form.range[1]).format("YYYY-MM-DD HH:mm:ss");
+
+    router.post("/projects", form, {
+        preserveScroll: true,
+        onSuccess: () => {
+            // nextAction();
+            modal.create = false;
+            clearForm();
+        },
+        onError: (error) => {
+            console.log("error", error);
+            errorAction(error);
+        },
+    });
+};
 const openDetail = (data) => {
-    selectedData.value = data;
+    const object = {
+        ...data,
+        range: [data.started_at, data.ended_at],
+    };
+    selectedData.value = JSON.parse(JSON.stringify(object));
     modal.detail = true;
 };
 function show(row) {
@@ -115,12 +161,12 @@ function show(row) {
                 </h2>
 
                 <div class="flex items-center gap-4">
-                    <NavLink
-                        :href="route('projects.create')"
+                    <button
+                        @click="modal.create = true"
                         class="inline-flex items-center rounded-md border border-transparent bg-white px-4 py-2 text-sm font-medium text-indigo-600 shadow-sm hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     >
                         Create Project
-                    </NavLink>
+                    </button>
                 </div>
             </div>
         </template>
@@ -147,6 +193,7 @@ function show(row) {
                             @click="openDetail(project)"
                             rounded="lg"
                             variant="flat"
+                            class="border"
                             :class="[
                                 modal.detail &&
                                 selectedData &&
@@ -255,8 +302,67 @@ function show(row) {
                 </v-row>
             </div>
         </div>
-        <!-- Drawer detail-->
+        <!-- Drawer Create -->
+        <v-navigation-drawer
+            width="480"
+            elevation="0"
+            v-model="modal.create"
+            location="right"
+            temporary
+        >
+            <div class="flex flex-col p-5 space-y-5">
+                <div class="flex justify-between items-center">
+                    <v-list-subheader>Project Create</v-list-subheader>
+                    <v-btn
+                        icon="mdi-close"
+                        flat
+                        @click="modal.create = false"
+                    ></v-btn>
+                </div>
+                <div>
+                    <label for="">Project Name</label>
+                    <TextInput v-model="form.name" />
+                </div>
+                <div>
+                    <label for="">Description</label>
+                    <TextArea v-model="form.description" />
+                </div>
+                <div>
+                    <label for="">Date</label>
+                    <div class="flex space-x-2 items-center">
+                        <DatePicker
+                            v-model="form.range"
+                            range
+                            auto-apply
+                            :enable-time-picker="false"
+                            :auto-position="false"
+                            teleport-center
+                        />
+                    </div>
+                </div>
+                <div class="flex justify-between items-center w-full space-x-5">
+                    <v-btn
+                        @click="clearForm"
+                        class="flex-grow"
+                        color="red"
+                        variant="outlined"
+                    >
+                        Cancel
+                    </v-btn>
+                    <v-btn
+                        @click="createData"
+                        class="flex-grow"
+                        flat
+                        color="black"
+                    >
+                        Create Data
+                    </v-btn>
+                </div>
+            </div>
 
+            <v-card-text> </v-card-text>
+        </v-navigation-drawer>
+        <!-- Drawer detail-->
         <v-navigation-drawer
             v-if="selectedData"
             width="480"
@@ -265,72 +371,66 @@ function show(row) {
             location="right"
             temporary
         >
-            <v-form>
-                <v-list>
-                    <div class="flex justify-between items-center">
-                        <v-list-subheader>Project Detail</v-list-subheader>
-                        <v-btn
-                            icon="mdi-close"
-                            flat
-                            @click="modal.detail = false"
-                        ></v-btn>
+            <div class="flex flex-col p-5 space-y-5">
+                <div class="flex justify-between items-center">
+                    <v-list-subheader>Project Detail</v-list-subheader>
+                    <v-btn
+                        icon="mdi-close"
+                        flat
+                        @click="modal.detail = false"
+                    ></v-btn>
+                </div>
+                <div>
+                    <label for="">Project Name</label>
+                    <TextInput v-model="selectedData.name" />
+                </div>
+                <div>
+                    <label for="">Description</label>
+                    <TextArea v-model="selectedData.description" />
+                </div>
+                <div>
+                    <label for="">Date</label>
+                    <div class="flex space-x-2 items-center">
+                        <!-- <VueDatePicker
+                            class="z-50 relative"
+                            v-model="selectedData.range"
+                            range
+                            auto-apply
+                            :enable-time-picker="false"
+                            :auto-position="false"
+                            teleport-center
+                        /> -->
+                        <DatePicker
+                            v-model="selectedData.range"
+                            range
+                            auto-apply
+                            :enable-time-picker="false"
+                            :auto-position="false"
+                            teleport-center
+                        />
+                        <!-- <span class="text-gray-500">to</span>
+                        <DatePicker v-model="selectedData.ended_at" /> -->
                     </div>
-
-                    <v-list-item
-                        ><label for="">Project Name</label>
-                        <v-text-field
-                            v-model="selectedData.name"
-                            label="Name"
-                            required
-                        />
-                        <v-divider></v-divider>
-                    </v-list-item>
-                    <v-list-item
-                        ><label for="">Description</label>
-                        <v-textarea
-                            v-model="selectedData.description"
-                            label="Description"
-                            required
-                        />
-                        <v-divider></v-divider>
-                    </v-list-item>
-                    <v-list-item
-                        ><label for="">Date</label>
-                        <div>
-                            <input
-                                v-model="selectedData.started_at"
-                                type="datetime-local"
-                                label="started_at"
-                                required
-                            />
-
-                            <input
-                                v-model="selectedData.ended_at"
-                                type="datetime-local"
-                                label="ended_at"
-                                required
-                            />
-                        </div>
-                        <v-divider></v-divider>
-                    </v-list-item>
-                    <v-list-item>
-                        <div
-                            class="flex justify-between items-center w-full space-x-5"
-                        >
-                            <v-btn
-                                class="flex-grow"
-                                color="red"
-                                variant="outlined"
-                            >
-                                Delete Project
-                            </v-btn>
-                            <v-btn class="flex-grow" flat color="black">
-                                Update Data
-                            </v-btn>
-                        </div>
-                    </v-list-item>
-                </v-list>
-            </v-form>
+                </div>
+                <div class="flex justify-between items-center w-full space-x-5">
+                    <v-btn
+                        @click="deleteData"
+                        class="flex-grow"
+                        color="red"
+                        variant="outlined"
+                    >
+                        Delete Project
+                    </v-btn>
+                    <v-btn
+                        @click="editData"
+                        class="flex-grow"
+                        flat
+                        color="black"
+                    >
+                        Update Data
+                    </v-btn>
+                </div>
+            </div>
 
             <v-card-text> </v-card-text>
         </v-navigation-drawer>

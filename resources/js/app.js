@@ -2,7 +2,9 @@ import '../css/app.css';
 import './bootstrap';
 import 'vuetify/styles';
 import '@mdi/font/css/materialdesignicons.css';
-
+import 'flowbite';
+import VueDatePicker from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css'
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createApp, h } from 'vue';
@@ -31,6 +33,7 @@ createInertiaApp({
                 components,
                 directives,
             }))
+            .component('VueDatePicker', VueDatePicker)
             .mount(el);
     },
     progress: {

@@ -1,7 +1,11 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, reactive } from "vue";
 import { Head, router, useForm } from "@inertiajs/vue3";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout.vue";
+import Modal from "@/Components/Modal.vue";
+import TextArea from "@/Components/TextArea.vue";
+
+import TextInput from "@/Components/TextInput.vue";
 import NavLink from "@/Components/NavLink.vue";
 import {
     PencilIcon,
@@ -12,6 +16,15 @@ import {
 import moment from "moment";
 import draggable from "vuedraggable";
 
+const selectedStatus = ref(null);
+const formTask = useForm({
+    title: "",
+    description: "",
+    deadline: "",
+    status_id: "",
+    members: [],
+    done: false,
+});
 const props = defineProps({
     project: {
         type: Object,
@@ -34,7 +47,6 @@ const props = defineProps({
     },
 });
 
-const newStatusName = ref("");
 const newTaskName = ref("");
 const isEditTaskModalVisible = ref(false);
 const isEditStatusModalVisible = ref(false);
@@ -47,42 +59,25 @@ const formStatus = useForm({
     name: "",
 });
 
+const state = reactive({
+    editing: false,
+});
 const showEditTaskModal = (task) => {
-    currentTask.value = { ...task };
-    currentTask.value.members = currentTask.value.members.map(
-        (member) => member.member_id
-    );
-    isEditTaskModalVisible.value = true;
-};
-const handleChange = () => {
-    console.log("changed");
-};
-const inputChanged = (value) => {
-    //   this.activeNames = value;
-};
-const getComponentData = () => {
-    return {
-        onChange: this.handleChange,
-        onInput: this.inputChanged,
-        wrap: true,
-        value: this.activeNames,
-    };
-};
-
-const showEditStatusModal = (status) => {
-    currentStatus.value = {
-        ...status,
-    };
-    isEditStatusModalVisible.value = true;
+    Object.assign(formTask, task);
+    state.editing = true;
+    console.log("Task:", task);
+    formTask.members = task.members.map((member) => member.member_id);
+    modal.task = true;
 };
 
 const hideEditTaskModal = () => {
-    isEditTaskModalVisible.value = false;
+    modal.task = false;
     router.get("/projects/" + props.project.id, {}, { preserveState: true });
 };
 
 const hideEditStatusModal = () => {
-    isEditStatusModalVisible.value = false;
+    modal.status = false;
+    state.editing = false;
 };
 
 const copiedStatuses = ref([]);
@@ -110,23 +105,32 @@ const moveTask = (evt) => {
     console.log("Pindah dari board:", fromBoard, "ke:", toBoard);
     console.log("Task yang dipindah:", movedItem);
 
-    currentTask.value = movedItem;
-    currentTask.value.status_id = Number(toBoard);
+    // currentTask.value = movedItem;
+    Object.assign(formTask, movedItem);
+    formTask.status_id = Number(toBoard);
+    // currentTask.value.status_id = Number(toBoard);
     updateTask();
 };
 
+const modal = reactive({
+    status: false,
+    task: false,
+});
+
 const updateTask = () => {
-    if (currentTask.value) {
+    if (formTask) {
         loading.value["updateTask"] = true;
 
-        if (currentTask.value.deadline) {
-            currentTask.value.deadline = moment(
-                currentTask.value.deadline
-            ).format("YYYY-MM-DD HH:mm:ss");
+        if (formTask.deadline) {
+            formTask.deadline = moment(formTask.deadline).format(
+                "YYYY-MM-DD HH:mm:ss"
+            );
         }
+
+        console.log("Form Task:", formTask.members);
         router.patch(
-            `/projects/${props.project.id}/tasks/${currentTask.value.id}`,
-            currentTask.value,
+            `/projects/${props.project.id}/tasks/${formTask.id}`,
+            formTask,
             {
                 preserveScroll: true,
                 onSuccess: () => {
@@ -153,12 +157,11 @@ const updateTask = () => {
 };
 
 const updateStatus = () => {
-    if (currentStatus.value) {
+    if (formStatus.name) {
+        console.log({ formStatus });
         router.patch(
-            `/projects/${props.project.id}/statuses/${currentStatus.value.id}`,
-            {
-                name: currentStatus.value.name,
-            },
+            `/projects/${props.project.id}/statuses/${formStatus.id}`,
+            { name: formStatus.name },
             {
                 preserveScroll: true,
                 onSuccess: () => {
@@ -221,38 +224,45 @@ function addStatus() {
         preserveScroll: true,
         onSuccess: () => {
             formStatus.reset();
+            modal.status = false;
         },
     });
 }
 
+const clearTask = () => {
+    formTask.title = "";
+    formTask.description = "";
+    formTask.deadline = "";
+    formTask.status_id = "";
+    formTask.members = [];
+    formTask.done = false;
+};
 function addTask(status) {
-    // console.log({ status, props: props.project.id });
-    if (newTaskName.value.trim() !== "") {
+    if (formTask.title) {
+        const payload = {
+            ...formTask,
+            deadline: moment(formTask.deadline).format("YYYY-MM-DD HH:mm:ss"),
+            status_id: status.id,
+        };
+        console.log("Payload:", payload);
         try {
-            router.post(
-                `/projects/${props.project.id}/tasks`,
-                {
-                    title: newTaskName.value,
-                    done: false,
-                    status_id: status.id,
+            router.post(`/projects/${props.project.id}/tasks`, payload, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    router.get(
+                        "/projects/" + props.project.id,
+                        {},
+                        {
+                            preserveScroll: true,
+                        }
+                    );
+                    clearTask();
+                    editBoard.value = null;
                 },
-                {
-                    preserveScroll: true,
-                    onSuccess: () => {
-                        router.get(
-                            "/projects/" + props.project.id,
-                            {},
-                            {
-                                preserveScroll: true,
-                            }
-                        );
-                        editBoard.value = null;
-                    },
-                    onError: (error) => {
-                        console.log("error", error);
-                    },
-                }
-            );
+                onError: (error) => {
+                    console.log("error", error);
+                },
+            });
         } catch (error) {
             console.error("Error adding task:", error);
         }
@@ -319,7 +329,9 @@ onMounted(() => {
         <div class="py-12">
             <div class="mx-auto max-w-7xl space-y-6 sm:px-6 lg:px-8">
                 <div class="flex flex-col gap-4 w-full">
-                    <div class="flex gap-4 overflow-x-auto w-full pb-6">
+                    <div
+                        class="flex gap-4 overflow-x-auto w-full pb-6 h-screen"
+                    >
                         <div
                             v-for="status in statuses"
                             :key="status.id"
@@ -355,13 +367,36 @@ onMounted(() => {
                                         </template>
                                         <v-list elevation="1" density="compact">
                                             <v-list-item>
-                                                <button>Edit</button>
+                                                <button
+                                                    @click="
+                                                        modal.status = true;
+                                                        Object.assign(
+                                                            formStatus,
+                                                            status
+                                                        );
+                                                        state.editing = true;
+                                                    "
+                                                >
+                                                    Edit
+                                                </button>
                                             </v-list-item>
-                                            <v-list-item> Delete </v-list-item>
+                                            <v-list-item
+                                                @click="
+                                                    modal.delete = true;
+                                                    selectedStatus = status;
+                                                "
+                                            >
+                                                Delete
+                                            </v-list-item>
                                         </v-list>
                                     </v-menu>
 
-                                    <button @click="editBoard = status">
+                                    <button
+                                        @click="
+                                            modal.task = true;
+                                            selectedStatus = status;
+                                        "
+                                    >
                                         <!-- @click="deleteStatus(status)" -->
                                         <PlusIcon
                                             class="h-4 w-4 text-gray-700 hover:text-blue-700"
@@ -391,7 +426,7 @@ onMounted(() => {
                             >
                                 <template #item="{ element }">
                                     <div
-                                        class="p-2 border border-gray-100 rounded bg-none mb-2 flex items-center justify-between"
+                                        class="p-2 border border-gray-100 rounded bg-none mb-2 flex items-center cursor-pointer justify-between bg-white"
                                     >
                                         <span>
                                             <v-icon
@@ -443,10 +478,16 @@ onMounted(() => {
                             </div>
                         </div>
                         <div
-                            class="flex-shrink-0 flex flex-col gap-4 bg-gray-100 p-4 rounded shadow-lg w-1/4"
-                            style="width: 300px"
+                            @click="modal.status = true"
+                            class="flex relative flex-col gap-4 hover:bg-gray-100 bg-white cursor-pointer border items-center justify-center h-3/4 border-dashed p-4 rounded w-1/5"
                         >
-                            <div class="flex justify-between">
+                            <v-icon
+                                color="disabled"
+                                icon="mdi-plus"
+                                size="large"
+                            ></v-icon>
+
+                            <!-- <div class="flex justify-between">
                                 <v-text-field
                                     v-model="formStatus.name"
                                     label="Status Name"
@@ -454,7 +495,7 @@ onMounted(() => {
                                     appendInnerIcon="mdi-plus"
                                     @click:append-inner="addStatus"
                                 />
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -514,6 +555,7 @@ onMounted(() => {
                             </option>
                         </select>
                     </div>
+
                     <v-select
                         :items="optionMembers()"
                         label="Members"
@@ -571,6 +613,185 @@ onMounted(() => {
                 </div>
             </div>
         </div>
+        <Modal :show="modal.status" @close="modal.status = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">
+                    {{ state.editing ? "Edit status" : "Create new status" }}
+                </h2>
+
+                <div class="mt-6">
+                    <label for="">Status Name</label>
+                    <TextInput v-model="formStatus.name" />
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <div
+                        class="flex justify-between items-center w-full space-x-5"
+                    >
+                        <v-btn
+                            @click="
+                                formStatus.name = '';
+                                modal.status = false;
+                            "
+                            class="flex-grow"
+                            color="red"
+                            variant="outlined"
+                        >
+                            Cancel
+                        </v-btn>
+                        <v-btn
+                            v-if="state.editing"
+                            @click="updateStatus"
+                            class="flex-grow"
+                            flat
+                            color="black"
+                        >
+                            Update Status
+                        </v-btn>
+                        <v-btn
+                            v-else
+                            @click="addStatus"
+                            class="flex-grow"
+                            flat
+                            color="black"
+                        >
+                            Create Status
+                        </v-btn>
+                    </div>
+                </div>
+            </div>
+        </Modal>
+        <Modal :show="modal.delete" @close="modal.delete = false">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">
+                    Are you sure you want to delete this status?
+                </h2>
+                <p>Your action will delete all the tasks inside</p>
+                <div class="mt-6 flex justify-end">
+                    <div
+                        class="flex justify-between items-center w-full space-x-5"
+                    >
+                        <v-btn
+                            @click="modal.delete = false"
+                            class="flex-grow"
+                            color="black"
+                            variant="outlined"
+                        >
+                            Cancel
+                        </v-btn>
+
+                        <v-btn
+                            @click="deleteStatus(selectedStatus)"
+                            class="flex-grow"
+                            flat
+                            color="red"
+                        >
+                            Delete Status
+                        </v-btn>
+                    </div>
+                </div>
+            </div>
+        </Modal>
+        <v-navigation-drawer
+            width="480"
+            elevation="0"
+            v-model="modal.task"
+            location="right"
+            temporary
+        >
+            <div class="flex flex-col p-5 space-y-5">
+                <div class="flex justify-between items-center">
+                    <v-list-subheader>{{
+                        state.editing ? "Edit task" : "Add a new task"
+                    }}</v-list-subheader>
+                    <v-btn
+                        icon="mdi-close"
+                        flat
+                        @click="
+                            modal.task = false;
+                            state.editing = false;
+                        "
+                    ></v-btn>
+                </div>
+                <v-divider></v-divider>
+                <div class="grid grid-cols-3 gap-4 items-start">
+                    <label for="">Task name</label>
+                    <TextInput class="col-span-2" v-model="formTask.title" />
+                    <label for="">Assignees</label>
+                    <v-combobox
+                        v-model="formTask.members"
+                        :items="optionMembers()"
+                        class="col-span-2"
+                        chips
+                        clearable
+                        density="compact"
+                        multiple
+                    >
+                        <template
+                            v-slot:selection="{ attrs, item, select, selected }"
+                        >
+                            <v-chip
+                                v-bind="attrs"
+                                :model-value="selected"
+                                closable
+                                @click="select"
+                                @click:close="remove(item)"
+                            >
+                                <strong>{{ item }}</strong
+                                >&nbsp;
+                                <span>(interest)</span>
+                            </v-chip>
+                        </template>
+                    </v-combobox>
+
+                    <label for="">Due date</label>
+                    <VueDatePicker
+                        v-model="formTask.deadline"
+                        class="z-50 relative col-span-2"
+                        auto-apply
+                        :enable-time-picker="false"
+                        :auto-position="false"
+                        teleport-center
+                    />
+                    <label for="">Description</label>
+                    <TextArea
+                        class="col-span-2"
+                        v-model="formTask.description"
+                    />
+                </div>
+
+                <div class="flex justify-between items-center w-full space-x-5">
+                    <v-btn
+                        @click="clearTask"
+                        class="flex-grow"
+                        color="red"
+                        variant="outlined"
+                    >
+                        Cancel
+                    </v-btn>
+                    <v-btn
+                        v-if="state.editing"
+                        @click="updateTask"
+                        class="flex-grow"
+                        flat
+                        color="black"
+                    >
+                        Update Task
+                    </v-btn>
+                    <v-btn
+                        v-else
+                        @click="addTask(selectedStatus)"
+                        class="flex-grow"
+                        flat
+                        color="black"
+                    >
+                        Create Task
+                    </v-btn>
+                </div>
+            </div>
+
+            <v-card-text> </v-card-text>
+        </v-navigation-drawer>
     </AuthenticatedLayout>
 </template>
 
